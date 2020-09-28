@@ -79,12 +79,45 @@ listen_frame: c.wl_listener = undefined,
 listen_mode: c.wl_listener = undefined,
 
 pub fn init(self: *Self, root: *Root, wlr_output: *c.wlr_output) !void {
+    var wanted_width: i32 = 1920;
+    var wanted_height: i32 = 1080;
+    var wanted_refresh: i32 = 143999; // mHz
+
     // Some backends don't have modes. DRM+KMS does, and we need to set a mode
     // before we can use the output. The mode is a tuple of (width, height,
     // refresh rate), and each monitor supports only a specific set of modes. We
     // just pick the monitor's preferred mode, a more sophisticated compositor
     // would let the user configure it.
-    if (c.wlr_output_preferred_mode(wlr_output)) |mode| {
+    var current: *c.wlr_output_mode = @fieldParentPtr(c.wlr_output_mode, "link", &wlr_output.modes);
+    var stop = false;
+    var want_mode = current;
+    var use_preferred = true;
+
+    while (!stop) {
+        std.debug.warn("Mode {}={}x{}@{} is available\n", .{
+            @ptrCast([*:0]u8, &wlr_output.name),
+            current.width,
+            current.height,
+            current.refresh,
+        });
+        if (current.*.width == wanted_width and current.*.height == wanted_height and
+            current.*.refresh == wanted_refresh)
+        {
+            want_mode = current;
+            use_preferred = false;
+        }
+        current = @fieldParentPtr(c.wlr_output_mode, "link", current.*.link.next);
+        if (current.link.next == wlr_output.modes.next) {
+            stop = true;
+        }
+    }
+    if (c.wlr_output_preferred_mode(wlr_output)) |m| {
+        var mode = m;
+        if (!use_preferred) {
+            mode = want_mode;
+        } else {
+            std.debug.warn("Using the monitors preferred output mode.\n", .{});
+        }
         c.wlr_output_set_mode(wlr_output, mode);
         c.wlr_output_enable(wlr_output, true);
         if (!c.wlr_output_commit(wlr_output)) return error.OutputCommitFailed;

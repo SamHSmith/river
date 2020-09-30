@@ -94,3 +94,47 @@ pub fn deinit(self: Self) void {
     self.float_filter.deinit();
     self.csd_filter.deinit();
 }
+
+// samhsmith's config corner
+const OutputConfig = struct {
+    name: []const u8,
+    width: i32,
+    height: i32,
+    refresh: i32, //mHz
+};
+
+var output_configs = std.ArrayList(OutputConfig).init(util.gpa); //when only reading use the functions below
+var mouse_sensitivity: f64 = 0.5;//1.0;
+
+pub fn get_mouse_sensitivity() f64 {
+    return mouse_sensitivity;
+}
+
+pub fn get_output_config(name: [*:0]u8) OutputConfig {
+    _ = output_configs.append(OutputConfig{ .name = "DP-1", .width = 0, .height = 0, .refresh = 143999 }) catch unreachable;
+    _ = output_configs.append(OutputConfig{ .name = "HDMI-A-1", .width = 0, .height = 0, .refresh = 74986 }) catch unreachable;
+
+    var match = false;
+    var config = OutputConfig{ .name = "", .width = 0, .height = 0, .refresh = 0 };
+    for (output_configs.items) |con| {
+        var eq = true;
+        var i: usize = 0;
+        while (i < 24 and i < con.name.len) { // 24 is the length of the buffer comming from wlroots
+            if (name[i] != con.name[i]) {
+                eq = false;
+                i = 24;
+            }
+            i += 1;
+        }
+
+        if (eq) {
+            match = true;
+            config = con;
+        }
+    }
+    if (!match) {
+        return OutputConfig{ .name = "", .width = 0, .height = 0, .refresh = 0 };
+    }
+
+    return config;
+}

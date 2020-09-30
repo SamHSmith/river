@@ -32,6 +32,7 @@ const View = @import("View.zig");
 const ViewStack = @import("view_stack.zig").ViewStack;
 const AttachMode = @import("view_stack.zig").AttachMode;
 const OutputStatus = @import("OutputStatus.zig");
+const Config = @import("Config.zig");
 
 const State = struct {
     /// A bit field of focused tags
@@ -79,9 +80,9 @@ listen_frame: c.wl_listener = undefined,
 listen_mode: c.wl_listener = undefined,
 
 pub fn init(self: *Self, root: *Root, wlr_output: *c.wlr_output) !void {
-    var wanted_width: i32 = 1920;
-    var wanted_height: i32 = 1080;
-    var wanted_refresh: i32 = 143999; // mHz
+    var output_name = @ptrCast([*:0]u8, &wlr_output.name);
+
+    var wanted_config = Config.get_output_config(output_name);
 
     // Some backends don't have modes. DRM+KMS does, and we need to set a mode
     // before we can use the output. The mode is a tuple of (width, height,
@@ -92,16 +93,25 @@ pub fn init(self: *Self, root: *Root, wlr_output: *c.wlr_output) !void {
     var stop = false;
     var want_mode = current;
     var use_preferred = true;
+    var preferred_mode = c.wlr_output_preferred_mode(wlr_output);
+
+    if (preferred_mode != null and wanted_config.width == 0) { wanted_config.width = preferred_mode.*.width; }
+    if (preferred_mode != null and wanted_config.height == 0) { wanted_config.height = preferred_mode.*.height; }
+    if (preferred_mode != null and wanted_config.refresh == 0) { wanted_config.refresh = preferred_mode.*.refresh; }
+    std.debug.warn("I want : {}\n", .{wanted_config});
 
     while (!stop) {
         std.debug.warn("Mode {}={}x{}@{} is available\n", .{
-            @ptrCast([*:0]u8, &wlr_output.name),
+            output_name,
             current.width,
             current.height,
             current.refresh,
         });
-        if (current.*.width == wanted_width and current.*.height == wanted_height and
-            current.*.refresh == wanted_refresh)
+        if (
+    wanted_config.name.len != 0 and // if this is true we do want a config
+    current.*.width == wanted_config.width and 
+    current.*.height == wanted_config.height and
+    current.*.refresh == wanted_config.refresh)
         {
             want_mode = current;
             use_preferred = false;

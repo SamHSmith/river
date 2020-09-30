@@ -33,6 +33,7 @@ const Seat = @import("Seat.zig");
 const View = @import("View.zig");
 const ViewStack = @import("view_stack.zig").ViewStack;
 
+
 const Mode = union(enum) {
     passthrough: void,
     down: *View,
@@ -494,7 +495,9 @@ fn handleMotion(listener: ?*c.wl_listener, data: ?*c_void) callconv(.C) void {
 
     self.seat.handleActivity();
 
-    Mode.processMotion(self, event.device, event.time_msec, event.delta_x, event.delta_y);
+    const sensitivity = Config.get_mouse_sensitivity();
+
+    Mode.processMotion(self, event.device, event.time_msec, event.delta_x * sensitivity, event.delta_y * sensitivity);
 }
 
 fn handleRequestSetCursor(listener: ?*c.wl_listener, data: ?*c_void) callconv(.C) void {

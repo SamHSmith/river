@@ -87,8 +87,8 @@ pub fn init(self: *Self, root: *Root, wlr_output: *c.wlr_output) !void {
     // Some backends don't have modes. DRM+KMS does, and we need to set a mode
     // before we can use the output. The mode is a tuple of (width, height,
     // refresh rate), and each monitor supports only a specific set of modes. We
-    // just pick the monitor's preferred mode, a more sophisticated compositor
-    // would let the user configure it.
+    // look for a particular desired mode. And if it isn't supported we just 
+    // pick the monitor's preferred mode.
     var current: *c.wlr_output_mode = @fieldParentPtr(c.wlr_output_mode, "link", &wlr_output.modes);
     var stop = false;
     var want_mode = current;

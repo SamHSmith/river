@@ -167,7 +167,13 @@ pub fn init(self: *Self, root: *Root, wlr_output: *c.wlr_output) !void {
         // from left-to-right in the order they appear. A more sophisticated
         // compositor would let the user configure the arrangement of outputs in the
         // layout. This automatically creates an output global on the wl_display.
-        c.wlr_output_layout_add_auto(root.wlr_output_layout, wlr_output);
+
+        var posconf = Config.get_output_position_config(output_name);
+        if (posconf.name.len == 0) {
+            c.wlr_output_layout_add_auto(root.wlr_output_layout, wlr_output);
+        } else {
+            c.wlr_output_layout_add(root.wlr_output_layout, wlr_output, posconf.x, posconf.y);
+        }
 
         // Ensure that a cursor image at the output's scale factor is loaded
         // for each seat.

@@ -103,7 +103,14 @@ const OutputConfig = struct {
     refresh: i32, //mHz
 };
 
+const OutputPositionConfig = struct {
+    name: []const u8,
+    x: i32,
+    y: i32,
+};
+
 var output_configs = std.ArrayList(OutputConfig).init(util.gpa); //when only reading use the functions below
+var output_position_configs = std.ArrayList(OutputPositionConfig).init(util.gpa);
 var mouse_sensitivity: f64 = 0.5;//1.0;
 var vertical_axis_sensitivity: i32 = -1;
 var horizontal_axis_sensitivity: i32 = 1;
@@ -143,6 +150,35 @@ pub fn get_output_config(name: [*:0]u8) OutputConfig {
     }
     if (!match) {
         return OutputConfig{ .name = "", .width = 0, .height = 0, .refresh = 0 };
+    }
+
+    return config;
+}
+
+pub fn get_output_position_config(name: [*:0]u8) OutputPositionConfig {
+    _ = output_position_configs.append(OutputPositionConfig{ .name = "DP-1", .x = 0, .y = 0 }) catch unreachable;
+    _ = output_position_configs.append(OutputPositionConfig{ .name = "HDMI-A-1", .x = 1920, .y = 0 }) catch unreachable;
+
+    var match = false;
+    var config = OutputPositionConfig{ .name = "", .x = 0, .y = 0 };
+    for (output_position_configs.items) |con| {
+        var eq = true;
+        var i: usize = 0;
+        while (i < 24 and i < con.name.len) { // 24 is the length of the buffer comming from wlroots
+            if (name[i] != con.name[i]) {
+                eq = false;
+                i = 24;
+            }
+            i += 1;
+        }
+
+        if (eq) {
+            match = true;
+            config = con;
+        }
+    }
+    if (!match) {
+        return OutputPositionConfig{ .name = "", .x = 0, .y = 0 };
     }
 
     return config;

@@ -105,9 +105,18 @@ const OutputConfig = struct {
 
 var output_configs = std.ArrayList(OutputConfig).init(util.gpa); //when only reading use the functions below
 var mouse_sensitivity: f64 = 0.5;//1.0;
+var vertical_axis_sensitivity: i32 = -1;
+var horizontal_axis_sensitivity: i32 = 1;
 
 pub fn get_mouse_sensitivity() f64 {
     return mouse_sensitivity;
+}
+
+pub fn get_vertical_axis_sensitivity() i32 {
+    return vertical_axis_sensitivity;
+}
+pub fn get_horizontal_axis_sensitivity() i32 {
+    return horizontal_axis_sensitivity;
 }
 
 pub fn get_output_config(name: [*:0]u8) OutputConfig {

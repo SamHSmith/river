@@ -374,6 +374,15 @@ fn handleAxis(listener: ?*c.wl_listener, data: ?*c_void) callconv(.C) void {
 
     self.seat.handleActivity();
 
+    if (event.orientation ==
+        c.wlr_axis_orientation.WLR_AXIS_ORIENTATION_VERTICAL) {
+        event.delta *= @intToFloat(f64,Config.get_vertical_axis_sensitivity());
+        event.delta_discrete *= Config.get_vertical_axis_sensitivity();
+    } else {
+        event.delta *= @intToFloat(f64,Config.get_horizontal_axis_sensitivity());
+        event.delta_discrete *= Config.get_horizontal_axis_sensitivity();
+    }
+
     // Notify the client with pointer focus of the axis event.
     c.wlr_seat_pointer_notify_axis(
         self.seat.wlr_seat,
